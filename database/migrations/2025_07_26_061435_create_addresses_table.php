@@ -1,37 +1,134 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+namespace App\Filament\Resources;
 
-return new class extends Migration
+use App\Filament\Resources\AddressResource\Pages;
+use App\Models\Address;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+
+class AddressResource extends Resource
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    protected static ?string $model = Address::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-map-pin';
+    protected static ?string $navigationGroup = 'Users';
+
+    public static function form(Form $form): Form
     {
-        Schema::create('addresses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('type')->default('shipping'); // billing/shipping
-            $table->string('name');
-            $table->string('phone');
-            $table->text('address_line');
-            $table->string('city');
-            $table->string('state');
-            $table->string('postal_code');
-            $table->string('country')->default('India');
-            $table->timestamps();
-        });
-        
+        return $form
+            ->schema([
+                Forms\Components\Select::make('user_id')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->required()
+                    ->label('User'),
+
+                Forms\Components\Select::make('type')
+                    ->options([
+                        'shipping' => 'Shipping',
+                        'billing' => 'Billing',
+                    ])
+                    ->required(),
+
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('phone')
+                    ->required()
+                    ->tel()
+                    ->maxLength(20),
+
+                Forms\Components\Textarea::make('address_line')
+                    ->required()
+                    ->rows(2),
+
+                Forms\Components\TextInput::make('city')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('state')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('postal_code')
+                    ->required()
+                    ->maxLength(20),
+
+                Forms\Components\TextInput::make('country')
+                    ->default('India')
+                    ->required()
+                    ->maxLength(255),
+            ]);
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public static function table(Table $table): Table
     {
-        Schema::dropIfExists('addresses');
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('id')->sortable(),
+
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('User')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\BadgeColumn::make('type')
+                    ->colors([
+                        'primary' => 'shipping',
+                        'success' => 'billing',
+                    ])
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('name')->searchable(),
+                Tables\Columns\TextColumn::make('phone')->searchable(),
+                Tables\Columns\TextColumn::make('city')->sortable(),
+                Tables\Columns\TextColumn::make('state')->sortable(),
+                Tables\Columns\TextColumn::make('postal_code'),
+                Tables\Columns\TextColumn::make('country'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('type')
+                    ->options([
+                        'shipping' => 'Shipping',
+                        'billing' => 'Billing',
+                    ]),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
-};
+
+    public static function getRelations(): array
+    {
+        return [];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListAddresses::route('/'),
+            'create' => Pages\CreateAddress::route('/create'),
+            'edit' => Pages\EditAddress::route('/{record}/edit'),
+        ];
+    }
+}
