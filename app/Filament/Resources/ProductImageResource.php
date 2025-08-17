@@ -15,6 +15,7 @@ class ProductImageResource extends Resource
     protected static ?string $model = ProductImage::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
+    protected static ?string $navigationGroup = 'Catalog Management';
     protected static ?string $navigationLabel = 'Product Images';
     protected static ?string $pluralModelLabel = 'Product Images';
     protected static ?string $modelLabel = 'Product Image';
